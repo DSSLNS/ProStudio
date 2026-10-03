@@ -1,0 +1,85 @@
+{
+  "u2netp": {
+    "name": "U²-Net-p (salient object segmentation)",
+    "task": "segmentation",
+    "license": "Apache-2.0",
+    "source": "https://github.com/xuebinqin/U-2-Net (ONNX via rembg)",
+    "files": [
+      {
+        "name": "u2netp.onnx",
+        "url": "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2netp.onnx",
+        "sha256": "309c8469258dda742793dce0ebea8e6dd393174f89934733ecc8b14c76f4ddd8",
+        "bytes": 4574861
+      }
+    ]
+  },
+  "skyseg": {
+    "name": "Sky segmentation (U²-Net)",
+    "task": "segmentation",
+    "license": "MIT",
+    "source": "https://huggingface.co/JianyuanWang/skyseg (Sky-Segmentation-and-Post-processing)",
+    "files": [
+      {
+        "name": "skyseg.onnx",
+        "url": "https://huggingface.co/JianyuanWang/skyseg/resolve/main/skyseg.onnx",
+        "sha256": "ab9c34c64c3d821220a2886a4a06da4642ffa14d5b30e8d5339056a089aa1d39",
+        "bytes": 175997079
+      }
+    ]
+  },
+  "migan": {
+    "name": "MI-GAN inpainting (pipeline v2)",
+    "task": "inpainting",
+    "license": "MIT",
+    "source": "https://huggingface.co/andraniksargsyan/migan (Picsart AI Research)",
+    "files": [
+      {
+        "name": "migan_pipeline_v2.onnx",
+        "url": "https://huggingface.co/andraniksargsyan/migan/resolve/main/migan_pipeline_v2.onnx",
+        "sha256": "6f1f3530a1a2324b19752018ce756088b07973cda8d7d890034ace5c8a48c40b",
+        "bytes": 28079181
+      }
+    ]
+  },
+  "scunet": {
+    "name": "SCUNet colour denoising (σ=25)",
+    "task": "denoise",
+    "license": "Apache-2.0",
+    "source": "https://huggingface.co/Heliosoph/scunet-onnx (SCUNet, Zhang et al.)",
+    "files": [
+      {
+        "name": "scunet_color_25.onnx",
+        "url": "https://huggingface.co/Heliosoph/scunet-onnx/resolve/main/scunet_color_25.onnx",
+        "sha256": "76170f1fcb84d3b3d38c4e7133a658bbbb70504e3dc5e4e4d1f7b0c395c093be",
+        "bytes": 3795638
+      },
+      {
+        "name": "scunet_color_25.onnx.data",
+        "url": "https://huggingface.co/Heliosoph/scunet-onnx/resolve/main/scunet_color_25.onnx.data",
+        "sha256": "f46aa0f533e5bb8b2485a6531a205e270f4a7be2447880a12d97f5f00b1e70c9",
+        "bytes": 73138176
+      }
+    ]
+  },
+  "esrgan": {
+    "name": "Real-ESRGAN General x4v3 (upscaling)",
+    "task": "upscale",
+    "license": "BSD-3-Clause",
+    "source": "https://huggingface.co/qualcomm/Real-ESRGAN-General-x4v3 (xinntao/Real-ESRGAN)",
+    "archive": "https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-models/models/real_esrgan_general_x4v3/releases/v0.63.0/real_esrgan_general_x4v3-onnx-float.zip",
+    "files": [
+      {
+        "name": "real_esrgan_general_x4v3.onnx",
+        "archivePath": "real_esrgan_general_x4v3-onnx-float/real_esrgan_general_x4v3.onnx",
+        "sha256": "09e6b675a0a18a97e1057c8dd7e984ef878a0a02ce104430da525b6241c858e7",
+        "bytes": 161087
+      },
+      {
+        "name": "real_esrgan_general_x4v3.data",
+        "archivePath": "real_esrgan_general_x4v3-onnx-float/real_esrgan_general_x4v3.data",
+        "sha256": "512d0ec9940c2e9d85d27f2952f12a0b77b7841dc22df4ce9f3ea458bc98f37f",
+        "bytes": 4836096
+      }
+    ]
+  }
+}

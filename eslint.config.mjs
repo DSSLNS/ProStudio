@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated/copied third-party runtime and models.
+    "public/wasm/**",
+    "public/models/**",
+    "public/sw.js",
+    "test-results/**",
+    "playwright-report/**",
   ]),
 ]);
 

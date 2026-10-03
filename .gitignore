@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+public/sw.js
+
+!.env.example
+test-results/
+playwright-report/
+
+# Optional AI models and ONNX runtime (downloaded/copied by scripts)
+public/models/
+public/wasm/
+
+# Large optional test fixtures (see TESTING.md)
+tests/fixtures/*.ARW
+tests/fixtures/*.heic

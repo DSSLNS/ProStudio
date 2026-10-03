@@ -1,69 +1,58 @@
-import Image from "next/image";
+import Link from "next/link";
+import { Camera, ShieldCheck } from "lucide-react";
+import { AppHeader } from "@/components/app/AppHeader";
+import { InstallPrompt } from "@/components/app/InstallPrompt";
+import { HomeImportActions, EditPhotoCard } from "@/components/app/HomeImport";
+import { ProjectList } from "@/components/projects/ProjectList";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <>
+      <AppHeader>
+        <InstallPrompt />
+      </AppHeader>
+      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 pb-16">
+        <section className="py-12 text-center sm:py-16">
+          <h1 className="text-4xl font-semibold tracking-[0.3em] sm:text-5xl">PROSTUDIO</h1>
+          <p className="mt-3 text-muted-foreground">Professional Photography &amp; Photo Editing</p>
+        </section>
+
+        <section aria-label="Start" className="grid gap-4 sm:grid-cols-2">
+          <Link
+            href="/camera"
+            className="group flex flex-col items-start gap-4 rounded-xl border border-border bg-card p-6 transition-colors hover:border-brand/60 focus-visible:outline-2 focus-visible:outline-ring sm:p-8"
+            data-testid="take-photo"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+            <span className="flex size-12 items-center justify-center rounded-full bg-brand/15 text-brand">
+              <Camera className="size-6" aria-hidden />
+            </span>
+            <span>
+              <span className="block text-xl font-semibold tracking-wide">TAKE PHOTO</span>
+              <span className="mt-1 block text-sm text-muted-foreground">
+                Open the professional camera — Auto or Manual.
+              </span>
+            </span>
+          </Link>
+          <EditPhotoCard />
+        </section>
+
+        <section className="mt-12" aria-labelledby="recent-heading">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <h2 id="recent-heading" className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Recent projects
+            </h2>
+            <div className="ml-auto flex flex-wrap gap-2">
+              <HomeImportActions />
+            </div>
+          </div>
+          <ProjectList limit={8} emptyHint="Your projects appear here. Take or import a photo to get started." />
+        </section>
+
+        <p className="mt-12 flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
+          <ShieldCheck className="size-4" aria-hidden />
+          Free, no account, no watermark. Photos are processed and stored only on this device.
+        </p>
       </main>
-    </div>
+    </>
   );
 }
