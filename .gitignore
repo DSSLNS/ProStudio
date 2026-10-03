@@ -52,3 +52,11 @@ public/wasm/
 # Large optional test fixtures (see TESTING.md)
 tests/fixtures/*.ARW
 tests/fixtures/*.heic
+
+# Refact AI assistant runtime state (not app source)
+.refact/buddy/drafts.json
+.refact/buddy/memory_ops.jsonl
+.refact/buddy/memory_ops.jsonl.lock
+.refact/buddy/runtime_queue.jsonl
+.refact/buddy/state.json
+.refact/knowledge/

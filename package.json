@@ -2,6 +2,9 @@
   "name": "prostudio",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "node scripts/copy-ort.mjs && next dev",
     "build": "node scripts/build-sw.mjs && node scripts/copy-ort.mjs && next build",
