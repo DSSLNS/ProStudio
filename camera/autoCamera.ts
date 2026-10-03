@@ -406,20 +406,26 @@ export class AutoCameraEngine {
   async applyAndVerify(set: AppliedSettings): Promise<ApplyResult> {
     const track = this.track;
     if (!track) return { applied: {}, rejected: [], settings: {} };
+
+    // Always send the full accumulated desired state merged with the new values.
+    // Some devices reset unmentioned constraints on each applyConstraints call;
+    // re-sending the full state prevents ISO from disappearing when shutter changes.
+    const merged = { ...this.lastApplied, ...set } as AppliedSettings;
+
     const rejected: ApplyResult["rejected"] = [];
     try {
-      await track.applyConstraints({ advanced: [set as MediaTrackConstraintSet] });
+      await track.applyConstraints({ advanced: [merged as MediaTrackConstraintSet] });
     } catch (e) {
       const reason = (e as Error)?.message || "The camera rejected the settings";
       for (const k of Object.keys(set) as (keyof AppliedSettings)[]) rejected.push({ key: k, reason });
       return { applied: this.lastApplied, rejected, settings: this.currentSettings() };
     }
     const settings = this.currentSettings();
-    const confirmed = verifyApplied(set, settings);
+    const confirmed = verifyApplied(merged, settings);
     for (const k of Object.keys(set) as (keyof AppliedSettings)[]) {
       if (!(k in confirmed)) rejected.push({ key: k, reason: "Not confirmed by the camera" });
     }
-    this.lastApplied = { ...this.lastApplied, ...confirmed };
+    this.lastApplied = confirmed;
     return { applied: this.lastApplied, rejected, settings };
   }
 
@@ -447,6 +453,9 @@ export class AutoCameraEngine {
    * Non-destructive corrections for a captured image, based on the analysis at
    * capture time and on what the hardware already did. Every change is a
    * software correction stored in the recipe; the original bytes are untouched.
+   *
+   * Scene-specific processing profiles ensure portraits, landscapes, night, and
+   * food shots receive different treatment rather than one-size-fits-all adjustments.
    */
   optimizeCapturedImage(
     analysis: AutoAnalysis | null,
@@ -455,29 +464,108 @@ export class AutoCameraEngine {
     const recipe = defaultRecipe();
     const corrections: string[] = [];
     if (!analysis) return { recipe, corrections };
-    const { stats, exposure, recommended } = analysis;
+    const { stats, exposure, recommended, scene } = analysis;
+
+    // ── Exposure ─────────────────────────────────────────────────────────────
     if (!opts.hardwareExposureApplied && Math.abs(exposure.ev) >= 0.2) {
-      // Partial correction — digital exposure cannot recover clipped highlights.
       recipe.light.exposure = Math.round(clamp(exposure.ev * 0.7, -1.5, 1.5) * 100) / 100;
       corrections.push(
-        `Digital exposure adjustment ${recipe.light.exposure > 0 ? "+" : ""}${recipe.light.exposure.toFixed(2)} EV (software correction)`,
+        `Digital exposure ${recipe.light.exposure > 0 ? "+" : ""}${recipe.light.exposure.toFixed(2)} EV`,
       );
     }
+
+    // ── Highlights / shadows ──────────────────────────────────────────────────
     if (stats.highlightClip > 0.01 || exposure.highlightProtected) {
       recipe.light.highlights = -Math.round(clamp(20 + stats.highlightClip * 400, 20, 50));
-      corrections.push(`Highlights ${recipe.light.highlights} (software correction)`);
+      corrections.push(`Highlights ${recipe.light.highlights}`);
     }
     if (analysis.lighting.backlit || stats.shadowClip > 0.08) {
       recipe.light.shadows = Math.round(clamp(20 + stats.shadowClip * 200, 20, 45));
-      corrections.push(`Shadows +${recipe.light.shadows} (software correction)`);
+      corrections.push(`Shadows +${recipe.light.shadows}`);
     }
+
+    // ── White balance ─────────────────────────────────────────────────────────
     if (!opts.hardwareWbApplied && !recommended.whiteBalance.neutral) {
       recipe.color.temperature = recommended.whiteBalance.softwareTemperature;
       recipe.color.tint = recommended.whiteBalance.softwareTint;
       corrections.push(
-        `White balance temperature ${signed(recipe.color.temperature)}, tint ${signed(recipe.color.tint)} (software correction)`,
+        `White balance ${signed(recipe.color.temperature)} / tint ${signed(recipe.color.tint)}`,
       );
     }
+
+    // ── Scene-specific processing profiles ───────────────────────────────────
+    const sceneType = scene.scene;
+    const isPortrait = sceneType === "portrait" || sceneType === "group-portrait";
+    const isLowLightScene = sceneType === "night" || sceneType === "low-light" || analysis.lighting.level === "night" || analysis.lighting.level === "low";
+
+    if (isPortrait) {
+      // Portrait: natural skin, moderate contrast, controlled sharpening.
+      recipe.light.contrast = 8;
+      recipe.color.saturation = -5;          // slightly desaturated for natural skin
+      recipe.color.vibrance = 10;            // lift dull tones without burning skin
+      recipe.detail.sharpenAmount = 35;      // moderate — avoid plastic skin
+      recipe.detail.sharpenRadius = 0.7;
+      if (isLowLightScene) {
+        recipe.detail.noiseLuminance = 40;
+        recipe.detail.noiseColor = 50;
+        corrections.push("Night portrait: noise reduction, natural skin tones");
+      } else {
+        recipe.detail.noiseLuminance = 15;
+        corrections.push("Portrait: natural contrast, skin-aware sharpening");
+      }
+    } else if (sceneType === "landscape" || sceneType === "outdoor" || sceneType === "sunset") {
+      // Landscape/outdoor: rich colour, punchy contrast, texture detail.
+      recipe.light.contrast = 18;
+      recipe.light.clarity = 20;
+      recipe.color.saturation = 8;
+      recipe.color.vibrance = 18;
+      recipe.detail.sharpenAmount = 55;
+      recipe.detail.sharpenRadius = 1.0;
+      corrections.push("Landscape: enhanced colour and detail");
+    } else if (isLowLightScene) {
+      // Night: lift shadows, strong noise reduction, careful sharpening.
+      recipe.light.contrast = 5;
+      recipe.light.shadows = Math.max(recipe.light.shadows, 25);
+      recipe.detail.noiseLuminance = 55;
+      recipe.detail.noiseColor = 60;
+      recipe.detail.sharpenAmount = 25;      // very gentle — noise amplifies harshly
+      corrections.push("Night: shadow lift, noise reduction");
+    } else if (sceneType === "food") {
+      // Food: warm, vibrant, appetising.
+      recipe.light.contrast = 12;
+      recipe.light.clarity = 15;
+      recipe.color.temperature += 8;
+      recipe.color.vibrance = 22;
+      recipe.color.saturation = 6;
+      recipe.detail.sharpenAmount = 60;
+      corrections.push("Food: warm colours, enhanced vibrance");
+    } else if (sceneType === "document") {
+      // Document: high contrast, maximum sharpness, desaturated.
+      recipe.light.contrast = 25;
+      recipe.color.saturation = -15;
+      recipe.detail.sharpenAmount = 80;
+      recipe.detail.sharpenRadius = 0.8;
+      corrections.push("Document: high contrast and sharpness");
+    } else if (sceneType === "macro") {
+      // Macro: sharp, moderate contrast, natural colour.
+      recipe.light.contrast = 14;
+      recipe.detail.sharpenAmount = 70;
+      recipe.detail.sharpenRadius = 0.8;
+      corrections.push("Macro: sharpness and detail");
+    } else if (sceneType === "backlit") {
+      // Backlit: aggressive shadow lift, highlight protection.
+      recipe.light.shadows = Math.max(recipe.light.shadows, 35);
+      recipe.light.highlights = Math.min(recipe.light.highlights, -25);
+      recipe.light.contrast = 5;
+      corrections.push("Backlit: shadow lift, highlight protection");
+    } else {
+      // General: subtle improvements applicable to any scene.
+      recipe.light.contrast = 10;
+      recipe.color.vibrance = 8;
+      recipe.detail.sharpenAmount = 45;
+      recipe.detail.noiseLuminance = 12;
+    }
+
     return { recipe, corrections };
   }
 

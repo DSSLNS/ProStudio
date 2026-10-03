@@ -68,17 +68,19 @@ export interface WbRecommendation {
 }
 
 /**
- * Recommend WB from a gray-world estimate. Correction strength is halved
- * because gray-world over-corrects scenes that are legitimately colourful
- * (sunsets, foliage); results are suggestions, never baked into pixels.
+ * Recommend WB from a gray-world estimate. Correction strength is reduced to 0.75×
+ * (from a naive 1×) because gray-world over-corrects legitimately colourful scenes
+ * (sunsets, foliage); results are suggestions stored as recipe values, never baked
+ * into pixels. 0.75× is conservative enough to avoid over-correcting while still
+ * removing most of the cast in typical indoor/warm-light portraits.
  */
 export function recommendWhiteBalance(
   estimate: { cct: number; tint: number },
   colorTemperatureRange: NumericRange | null,
 ): WbRecommendation {
   const hardwareKelvin = colorTemperatureRange ? kelvinForDevice(estimate.cct, colorTemperatureRange) : null;
-  const softwareTemperature = Math.round(softwareTemperatureFor(estimate.cct) * 0.5);
-  const softwareTint = Math.round(softwareTintFor(estimate.tint) * 0.5);
+  const softwareTemperature = Math.round(softwareTemperatureFor(estimate.cct) * 0.75);
+  const softwareTint = Math.round(softwareTintFor(estimate.tint) * 0.75);
   const neutral = Math.abs(softwareTemperature) < 4 && Math.abs(softwareTint) < 4;
   return {
     estimatedKelvin: estimate.cct,

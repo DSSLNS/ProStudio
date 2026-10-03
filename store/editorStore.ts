@@ -181,7 +181,16 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     });
   },
   updateRecipe: (fn) => {
-    const next = structuredClone(get().recipe);
+    // Two-level shallow clone: fast for slider ticks (mutate leaf → groups → recipe).
+    // structuredClone would deep-clone curves arrays on every pointermove at 120 Hz.
+    const src = get().recipe;
+    const next = { ...src } as EditRecipe;
+    for (const k of Object.keys(src) as (keyof EditRecipe)[]) {
+      const v = src[k] as unknown;
+      if (v !== null && typeof v === "object" && !Array.isArray(v)) {
+        (next as unknown as Record<string, unknown>)[k] = { ...(v as object) };
+      }
+    }
     fn(next);
     set({ recipe: next });
   },

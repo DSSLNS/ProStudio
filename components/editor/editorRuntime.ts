@@ -22,6 +22,16 @@ export interface EditorRuntime {
   histogram: () => Uint32Array | null;
 }
 
+// Persistent 1×1 canvas reused by readColor — avoids allocating a new element on every pointermove.
+let colorCanvas: HTMLCanvasElement | null = null;
+let colorCtx: CanvasRenderingContext2D | null = null;
+
+// Persistent canvas for histogram computation — reused across render frames.
+let histCanvas: HTMLCanvasElement | null = null;
+let histCtx: CanvasRenderingContext2D | null = null;
+let histW = 0;
+let histH = 0;
+
 export const editorRuntime: EditorRuntime = {
   canvas: null,
   assets: new AssetCache(async (id) => (await getAsset(id))?.blob),
@@ -42,12 +52,15 @@ export const editorRuntime: EditorRuntime = {
   readColor(x, y) {
     const c = editorRuntime.canvas;
     if (!c) return null;
-    const t = document.createElement("canvas");
-    t.width = 1;
-    t.height = 1;
-    const ctx = t.getContext("2d", { willReadFrequently: true })!;
-    ctx.drawImage(c, Math.floor(x), Math.floor(y), 1, 1, 0, 0, 1, 1);
-    const d = ctx.getImageData(0, 0, 1, 1).data;
+    if (!colorCanvas) {
+      colorCanvas = document.createElement("canvas");
+      colorCanvas.width = 1;
+      colorCanvas.height = 1;
+      colorCtx = colorCanvas.getContext("2d", { willReadFrequently: true });
+    }
+    if (!colorCtx) return null;
+    colorCtx.drawImage(c, Math.floor(x), Math.floor(y), 1, 1, 0, 0, 1, 1);
+    const d = colorCtx.getImageData(0, 0, 1, 1).data;
     return [d[0], d[1], d[2]];
   },
   histogram() {
@@ -56,12 +69,17 @@ export const editorRuntime: EditorRuntime = {
     const s = Math.min(1, 320 / Math.max(c.width, c.height));
     const w = Math.max(1, Math.round(c.width * s));
     const h = Math.max(1, Math.round(c.height * s));
-    const t = document.createElement("canvas");
-    t.width = w;
-    t.height = h;
-    const ctx = t.getContext("2d", { willReadFrequently: true })!;
-    ctx.drawImage(c, 0, 0, w, h);
-    const d = ctx.getImageData(0, 0, w, h).data;
+    if (!histCanvas || histW !== w || histH !== h) {
+      histCanvas = document.createElement("canvas");
+      histCanvas.width = w;
+      histCanvas.height = h;
+      histCtx = histCanvas.getContext("2d", { willReadFrequently: true });
+      histW = w;
+      histH = h;
+    }
+    if (!histCtx) return null;
+    histCtx.drawImage(c, 0, 0, w, h);
+    const d = histCtx.getImageData(0, 0, w, h).data;
     const bins = new Uint32Array(256 * 4);
     for (let i = 0; i < d.length; i += 4) {
       if (d[i + 3] === 0) continue;
