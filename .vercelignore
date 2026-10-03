@@ -1,0 +1,17 @@
+# Large AI models — not committed to git, loaded lazily at runtime.
+# In production the /models/ endpoint returns 404; the app gracefully shows
+# "model not installed". Models can be pre-installed on a custom server or
+# fetched by a user-triggered download inside the browser.
+public/models/
+
+# WASM runtime — also gitignored; regenerated on Vercel by `npm run build`
+# (scripts/copy-ort.mjs copies from node_modules/onnxruntime-web/dist).
+public/wasm/
+
+# Large test fixtures
+tests/fixtures/*.ARW
+tests/fixtures/*.heic
+
+# Local test artefacts
+test-results/
+playwright-report/
